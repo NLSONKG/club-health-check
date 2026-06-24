@@ -994,26 +994,25 @@ export default function App() {
 
             {/* Action buttons */}
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-
               <a
-                href={`tel:${import.meta.env.VITE_COACH_PHONE || "0912345678"}`}
+                href={`tel:${import.meta.env.VITE_COACH_PHONE || "0907402313"}`}
                 style={{
                   display: "block",
-                  background: "#fff",
-                  color: "#00833D",
-                  border: "1.5px solid #00833D",
+                  background: "#00833D",
+                  color: "#fff",
+                  border: "none",
                   borderRadius: "12px",
-                  padding: "14px",
-                  fontSize: "15px",
-                  fontWeight: "600",
+                  padding: "16px",
+                  fontSize: "16px",
+                  fontWeight: "700",
                   textAlign: "center",
                   textDecoration: "none",
+                  boxShadow: "0 4px 16px rgba(0,131,61,0.3)",
                   fontFamily: "inherit",
                 }}
               >
-                📅 Đặt lịch đo chỉ số — Gọi ngay
+                📞 Gọi ngay cho Coach Lam Sơn
               </a>
-
               <button
                 onClick={() => { setStep(0); setForm({ ho_ten: "", so_dien_thoai: "", tuoi: "", gioi_tinh: "", nghe_nghiep: "", can_nang: "", chieu_cao: "", muc_tieu: "", muc_van_dong: "", van_de: [], ghi_chu: "" }); setAiResult(""); }}
                 style={{
