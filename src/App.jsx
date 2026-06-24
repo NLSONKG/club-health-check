@@ -994,27 +994,6 @@ export default function App() {
 
             {/* Action buttons */}
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <a
-                href={`https://zalo.me/${import.meta.env.VITE_COACH_ZALO_ID || import.meta.env.VITE_COACH_PHONE || "0912345678"}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: "block",
-                  background: "#00833D",
-                  color: "#fff",
-                  textDecoration: "none",
-                  border: "none",
-                  borderRadius: "12px",
-                  padding: "16px",
-                  fontSize: "16px",
-                  fontWeight: "700",
-                  textAlign: "center",
-                  boxShadow: "0 4px 16px rgba(0,131,61,0.3)",
-                  fontFamily: "inherit",
-                }}
-              >
-                💬 Nhắn Zalo với Coach Lam Sơn
-              </a>
 
               <a
                 href={`tel:${import.meta.env.VITE_COACH_PHONE || "0912345678"}`}
