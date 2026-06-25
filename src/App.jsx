@@ -1,12 +1,8 @@
 import { useState, useEffect } from "react";
 
-// ─── Config (override via .env) ───────────────────────────────────────────────
-const COACH_NAME     = import.meta.env.VITE_COACH_NAME     || "Lam Sơn";
-const COACH_LOCATION = import.meta.env.VITE_COACH_LOCATION || "Rạch Giá, Kiên Giang";
-const COACH_LOCATION_SHORT = import.meta.env.VITE_COACH_LOCATION_SHORT || "Rạch Giá, KG";
-const COACH_PHONE    = import.meta.env.VITE_COACH_PHONE    || "0907402313";
-
 // ─── Constants ────────────────────────────────────────────────────────────────
+
+const COACH_NAME = import.meta.env.VITE_COACH_NAME || "Lam Sơn";
 
 const GOALS = [
   { value: "Giảm cân", label: "Giảm cân" },
@@ -33,7 +29,7 @@ const ISSUES = [
   { value: "Đau mỏi vai gáy, lưng (do ngồi nhiều)", label: "Đau mỏi vai gáy, lưng" },
 ];
 
-const SYSTEM_PROMPT = `Bạn là trợ lý tư vấn sức khỏe sơ bộ cho Club Nutrition của Coach ${COACH_NAME} tại ${COACH_LOCATION}. Coach ${COACH_NAME} là Thành Viên Độc Lập Herbalife 13 năm.
+const SYSTEM_PROMPT = `Bạn là trợ lý tư vấn sức khỏe sơ bộ cho Club Nutrition của Coach ${COACH_NAME}. Coach ${COACH_NAME} là Thành Viên Độc Lập Herbalife.
 
 NHIỆM VỤ: Đọc thông tin khách tự cung cấp → phân tích sơ bộ → gợi ý hướng cải thiện.
 
@@ -122,7 +118,7 @@ async function callClaudeAPI(formData) {
       messages: [{ role: "user", content: buildUserPrompt(formData) }],
     }),
   });
-  if (!response.ok) throw new Error(`API error: ${response.status}`);
+  if (!response.ok) throw new Error(`Claude API error: ${response.status}`);
   const data = await response.json();
   return data.content[0].text;
 }
@@ -180,9 +176,9 @@ async function sendTelegram(formData) {
   });
 }
 
-// Zalo Personal API — gửi tin nhắn vào chính tài khoản Coach
+// Zalo Personal API — gửi tin nhắn vào chính tài khoản Lam Sơn
 // Cần: VITE_ZALO_ACCESS_TOKEN (lấy từ developers.zalo.me, hạn 1 tháng, cần refresh)
-// Cần: VITE_ZALO_SELF_ID (Zalo User ID của Coach — lấy từ bước xác thực token)
+// Cần: VITE_ZALO_SELF_ID (Zalo User ID của Lam Sơn — lấy từ bước xác thực token)
 async function sendZaloNotify(formData) {
   const accessToken = import.meta.env.VITE_ZALO_ACCESS_TOKEN;
   const selfId = import.meta.env.VITE_ZALO_SELF_ID;
@@ -583,7 +579,7 @@ export default function App() {
           fontSize: "12px",
           fontWeight: "600",
         }}>
-          {COACH_LOCATION_SHORT}
+          {import.meta.env.VITE_COACH_LOCATION || "Rạch Giá, KG"}
         </div>
       </header>
 
@@ -996,7 +992,7 @@ export default function App() {
             {/* Action buttons */}
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               <a
-                href={`tel:${import.meta.env.VITE_COACH_PHONE || "0907402313"}`}
+                href={`tel:${import.meta.env.VITE_COACH_PHONE || "0932955313"}`}
                 style={{
                   display: "block",
                   background: "#00833D",
@@ -1047,7 +1043,7 @@ export default function App() {
         lineHeight: "1.6",
       }}>
         <p style={{ fontWeight: "600", color: "#6B7280", marginBottom: "4px" }}>
-          Club Nutrition {COACH_NAME} | {COACH_LOCATION}
+          Club Nutrition {COACH_NAME}
         </p>
         <p>Thông tin chỉ mang tính tham khảo, không phải chẩn đoán y khoa</p>
       </footer>
