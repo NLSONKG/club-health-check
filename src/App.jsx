@@ -1,5 +1,11 @@
 import { useState, useEffect } from "react";
 
+// ─── Config (override via .env) ───────────────────────────────────────────────
+const COACH_NAME     = import.meta.env.VITE_COACH_NAME     || "Lam Sơn";
+const COACH_LOCATION = import.meta.env.VITE_COACH_LOCATION || "Rạch Giá, Kiên Giang";
+const COACH_LOCATION_SHORT = import.meta.env.VITE_COACH_LOCATION_SHORT || "Rạch Giá, KG";
+const COACH_PHONE    = import.meta.env.VITE_COACH_PHONE    || "0907402313";
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const GOALS = [
@@ -27,7 +33,7 @@ const ISSUES = [
   { value: "Đau mỏi vai gáy, lưng (do ngồi nhiều)", label: "Đau mỏi vai gáy, lưng" },
 ];
 
-const SYSTEM_PROMPT = `Bạn là trợ lý tư vấn sức khỏe sơ bộ cho Club Nutrition của Coach Lam Sơn tại Rạch Giá, Kiên Giang. Coach Lam Sơn là Thành Viên Độc Lập Herbalife 13 năm.
+const SYSTEM_PROMPT = `Bạn là trợ lý tư vấn sức khỏe sơ bộ cho Club Nutrition của Coach ${COACH_NAME} tại ${COACH_LOCATION}. Coach ${COACH_NAME} là Thành Viên Độc Lập Herbalife 13 năm.
 
 NHIỆM VỤ: Đọc thông tin khách tự cung cấp → phân tích sơ bộ → gợi ý hướng cải thiện.
 
@@ -42,7 +48,7 @@ CẤU TRÚC TRẢ LỜI (đúng thứ tự, dùng emoji đầu mỗi mục):
 2. 📊 Nhận xét sơ bộ về tình trạng hiện tại (2–3 điểm cụ thể dựa trên thông tin khách cung cấp)
 3. ⚡ Điều cần chú ý nhất (1 điểm ưu tiên hàng đầu)
 4. 🎯 Hướng cải thiện gợi ý (2–3 bước cụ thể, thực tế)
-5. 📅 CTA mềm: Mời đặt lịch đo chỉ số miễn phí với Coach Lam Sơn để có kế hoạch cá nhân hóa
+5. 📅 CTA mềm: Mời đặt lịch đo chỉ số miễn phí với Coach ${COACH_NAME} để có kế hoạch cá nhân hóa
 
 TUYỆT ĐỐI KHÔNG:
 - Chẩn đoán bệnh hoặc đề cập tên bệnh cụ thể
@@ -174,9 +180,9 @@ async function sendTelegram(formData) {
   });
 }
 
-// Zalo Personal API — gửi tin nhắn vào chính tài khoản Lam Sơn
+// Zalo Personal API — gửi tin nhắn vào chính tài khoản Coach
 // Cần: VITE_ZALO_ACCESS_TOKEN (lấy từ developers.zalo.me, hạn 1 tháng, cần refresh)
-// Cần: VITE_ZALO_SELF_ID (Zalo User ID của Lam Sơn — lấy từ bước xác thực token)
+// Cần: VITE_ZALO_SELF_ID (Zalo User ID của Coach — lấy từ bước xác thực token)
 async function sendZaloNotify(formData) {
   const accessToken = import.meta.env.VITE_ZALO_ACCESS_TOKEN;
   const selfId = import.meta.env.VITE_ZALO_SELF_ID;
@@ -563,7 +569,7 @@ export default function App() {
       }}>
         <div>
           <div style={{ color: "#fff", fontWeight: "800", fontSize: "17px", letterSpacing: "-0.3px" }}>
-            Club Nutrition · Lam Sơn
+            Club Nutrition · {COACH_NAME}
           </div>
           <div style={{ color: "#A7F3D0", fontSize: "12px", fontWeight: "500", marginTop: "2px" }}>
             Hiểu cơ thể — Sống chủ động
@@ -577,7 +583,7 @@ export default function App() {
           fontSize: "12px",
           fontWeight: "600",
         }}>
-          Rạch Giá, KG
+          {COACH_LOCATION_SHORT}
         </div>
       </header>
 
@@ -605,7 +611,7 @@ export default function App() {
                 <span style={{ color: "#00833D" }}>sơ bộ của bạn</span>
               </h1>
               <p style={{ fontSize: "15px", color: "#6B7280", lineHeight: "1.6", marginBottom: "28px" }}>
-                Nhập thông tin → AI phân tích → Coach Lam Sơn liên hệ tư vấn chi tiết tại Club Nutrition
+                Nhập thông tin → AI phân tích → Coach {COACH_NAME} liên hệ tư vấn chi tiết tại Club Nutrition
               </p>
 
               {/* Feature pills */}
@@ -613,7 +619,7 @@ export default function App() {
                 {[
                   ["📊", "Phân tích BMI và tình trạng cơ thể"],
                   ["⚡", "Gợi ý cải thiện phù hợp mục tiêu"],
-                  ["📅", "Tư vấn 1-1 miễn phí với Coach Lam Sơn"],
+                  ["📅", `Tư vấn 1-1 miễn phí với Coach ${COACH_NAME}`],
                 ].map(([icon, text]) => (
                   <div key={text} style={{
                     display: "flex",
@@ -666,7 +672,7 @@ export default function App() {
               Thông tin cơ bản
             </h2>
             <p style={{ fontSize: "14px", color: "#6B7280", marginBottom: "24px" }}>
-              Giúp Coach Lam Sơn hiểu bạn hơn trước khi phân tích
+              Giúp Coach {COACH_NAME} hiểu bạn hơn trước khi phân tích
             </p>
 
             <InputField label="Họ và tên" required error={errors.ho_ten}>
@@ -812,7 +818,7 @@ export default function App() {
               <textarea
                 value={form.ghi_chu}
                 onChange={(e) => setField("ghi_chu")(e.target.value)}
-                placeholder="Anh/chị muốn Coach Lam Sơn biết thêm điều gì?"
+                placeholder={`Anh/chị muốn Coach ${COACH_NAME} biết thêm điều gì?`}
                 rows={3}
                 style={{
                   ...inputStyle(false),
@@ -1006,7 +1012,7 @@ export default function App() {
                   fontFamily: "inherit",
                 }}
               >
-                📞 Gọi ngay cho Coach Lam Sơn
+                📞 Gọi ngay cho Coach {COACH_NAME}
               </a>
               <button
                 onClick={() => { setStep(0); setForm({ ho_ten: "", so_dien_thoai: "", tuoi: "", gioi_tinh: "", nghe_nghiep: "", can_nang: "", chieu_cao: "", muc_tieu: "", muc_van_dong: "", van_de: [], ghi_chu: "" }); setAiResult(""); }}
@@ -1041,7 +1047,7 @@ export default function App() {
         lineHeight: "1.6",
       }}>
         <p style={{ fontWeight: "600", color: "#6B7280", marginBottom: "4px" }}>
-          Club Nutrition Lam Sơn | Rạch Giá, Kiên Giang
+          Club Nutrition {COACH_NAME} | {COACH_LOCATION}
         </p>
         <p>Thông tin chỉ mang tính tham khảo, không phải chẩn đoán y khoa</p>
       </footer>
