@@ -87,22 +87,15 @@ Hãy phân tích sức khỏe sơ bộ và gợi ý hướng cải thiện cho $
 }
 
 function formatResponse(text) {
-  // Convert markdown-like to HTML
   return text
     .split("\n")
     .map((line) => {
       if (!line.trim()) return "<br/>";
-      // Bold
       line = line.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
-      // Italic (disclaimer)
       line = line.replace(/\*(.*?)\*/g, "<em>$1</em>");
       return `<p>${line}</p>`;
     })
     .join("");
-}
-
-function now() {
-  return new Date().toISOString();
 }
 
 // ─── API Calls ────────────────────────────────────────────────────────────────
@@ -123,14 +116,12 @@ async function callClaudeAPI(formData) {
   return data.content[0].text;
 }
 
+// ✅ Lưu qua serverless function — token an toàn, không lộ ra browser
 async function saveToNocoDB(formData, aiResult) {
-  const url = import.meta.env.VITE_NOCODB_URL;
-  const token = import.meta.env.VITE_NOCODB_TOKEN;
-  if (!url || !token) return;
   const bmi = calcBMI(formData.can_nang, formData.chieu_cao);
-  await fetch(url, {
+  await fetch("/api/save-response", {
     method: "POST",
-    headers: { "Content-Type": "application/json", "xc-auth": token },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       ho_ten: formData.ho_ten,
       so_dien_thoai: formData.so_dien_thoai,
@@ -145,7 +136,7 @@ async function saveToNocoDB(formData, aiResult) {
       van_de: formData.van_de.join(", "),
       ghi_chu: formData.ghi_chu || "",
       ket_qua_ai: aiResult,
-      thoi_gian: now(),
+      thoi_gian: new Date().toISOString(),
       trang_thai: "chua_tu_van",
       nguon: "chatbot_web",
     }),
@@ -176,9 +167,6 @@ async function sendTelegram(formData) {
   });
 }
 
-// Zalo Personal API — gửi tin nhắn vào chính tài khoản Lam Sơn
-// Cần: VITE_ZALO_ACCESS_TOKEN (lấy từ developers.zalo.me, hạn 1 tháng, cần refresh)
-// Cần: VITE_ZALO_SELF_ID (Zalo User ID của Lam Sơn — lấy từ bước xác thực token)
 async function sendZaloNotify(formData) {
   const accessToken = import.meta.env.VITE_ZALO_ACCESS_TOKEN;
   const selfId = import.meta.env.VITE_ZALO_SELF_ID;
@@ -195,7 +183,6 @@ async function sendZaloNotify(formData) {
     `⚡ ${formData.van_de.join(", ") || "Không ghi rõ"}\n` +
     `🕐 ${new Date().toLocaleString("vi-VN")}`;
 
-  // Zalo API v3 — gửi message đến user (gửi cho chính mình cũng được)
   await fetch("https://openapi.zalo.me/v3.0/oa/message/cs", {
     method: "POST",
     headers: {
@@ -460,7 +447,6 @@ export default function App() {
   const [toast, setToast] = useState({ show: false, message: "" });
   const [loadingMsg, setLoadingMsg] = useState("Đang phân tích thông tin của bạn...");
 
-  // Scroll to top whenever step changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [step]);
@@ -472,7 +458,6 @@ export default function App() {
     setTimeout(() => setToast({ show: false, message: "" }), 3000);
   };
 
-  // Validation
   const validateA = () => {
     const e = {};
     if (!form.ho_ten.trim()) e.ho_ten = "Vui lòng nhập họ tên";
@@ -494,8 +479,6 @@ export default function App() {
     else if (form.chieu_cao < 100 || form.chieu_cao > 250) e.chieu_cao = "Chiều cao không hợp lệ";
     if (!form.muc_tieu) e.muc_tieu = "Vui lòng chọn mục tiêu";
     if (!form.muc_van_dong) e.muc_van_dong = "Vui lòng chọn mức vận động";
-
-    // BMI sanity check
     const bmi = calcBMI(form.can_nang, form.chieu_cao);
     if (bmi && (parseFloat(bmi) < 10 || parseFloat(bmi) > 60)) {
       e.can_nang = "Vui lòng kiểm tra lại cân nặng / chiều cao";
@@ -530,7 +513,6 @@ export default function App() {
       clearInterval(interval);
       setAiResult(result);
       setStep(4);
-      // Background: save + notify
       Promise.all([
         saveToNocoDB(form, result).then(() => showToast("✅ Kết quả đã được lưu lại!")).catch(() => {}),
         sendTelegram(form).catch(() => {}),
@@ -610,7 +592,6 @@ export default function App() {
                 Nhập thông tin → AI phân tích → Coach {COACH_NAME} liên hệ tư vấn chi tiết tại Club Nutrition
               </p>
 
-              {/* Feature pills */}
               <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "28px", textAlign: "left" }}>
                 {[
                   ["📊", "Phân tích BMI và tình trạng cơ thể"],
@@ -746,7 +727,6 @@ export default function App() {
               Càng chi tiết, AI phân tích càng chính xác
             </p>
 
-            {/* Weight + Height inline */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
               <div>
                 <label style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "#1F2937", marginBottom: "6px" }}>
@@ -764,7 +744,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Live BMI preview */}
             {bmi && (
               <div style={{
                 background: "#F0FAF5",
@@ -926,7 +905,6 @@ export default function App() {
         {/* Result */}
         {step === 4 && (
           <div style={{ padding: "24px 20px" }}>
-            {/* Success badge */}
             <div style={{
               display: "flex",
               alignItems: "center",
@@ -943,7 +921,6 @@ export default function App() {
               </span>
             </div>
 
-            {/* BMI card */}
             {bmi && (
               <div style={{
                 background: "#fff",
@@ -972,7 +949,6 @@ export default function App() {
               </div>
             )}
 
-            {/* AI Result Card */}
             <div
               className="result-card"
               style={{
@@ -989,7 +965,6 @@ export default function App() {
               dangerouslySetInnerHTML={{ __html: formatResponse(aiResult) }}
             />
 
-            {/* Action buttons */}
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               <a
                 href={`tel:${import.meta.env.VITE_COACH_PHONE || "0932955313"}`}
@@ -1032,7 +1007,6 @@ export default function App() {
         )}
       </main>
 
-      {/* Footer */}
       <footer style={{
         background: "#fff",
         borderTop: "1px solid #E5E7EB",
