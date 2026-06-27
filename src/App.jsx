@@ -123,6 +123,7 @@ async function saveToNocoDB(formData, aiResult) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
+      ten_gsv: COACH_NAME,
       ho_ten: formData.ho_ten,
       so_dien_thoai: formData.so_dien_thoai,
       tuoi: parseInt(formData.tuoi),
