@@ -673,7 +673,19 @@ export default function App() {
             </InputField>
 
             <InputField label="Nghề nghiệp" error={errors.nghe_nghiep}>
-              <TextInput value={form.nghe_nghiep} onChange={setField("nghe_nghiep")} placeholder="Văn phòng / Kinh doanh / Nội trợ / Khác" hasError={false} />
+              <input
+                type="text"
+                value={form.nghe_nghiep}
+                onChange={(e) => setField("nghe_nghiep")(e.target.value)}
+                placeholder="Văn phòng / Kinh doanh / Nội trợ / Khác"
+                style={{
+                  ...inputStyle(false),
+                  borderColor: "#D1FAE5",
+                  ime: "active",
+                }}
+                onFocus={(e) => (e.target.style.borderColor = "#00833D")}
+                onBlur={(e) => (e.target.style.borderColor = "#D1FAE5")}
+              />
             </InputField>
 
             <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
@@ -985,6 +997,46 @@ export default function App() {
               >
                 📞 Gọi ngay cho Coach {COACH_NAME}
               </a>
+              <div style={{ display: "flex", gap: "10px" }}>
+                <a
+                  href={`https://zalo.me/${(import.meta.env.VITE_COACH_PHONE || "0932955313").replace(/^0/, "84")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    flex: 1,
+                    display: "block",
+                    background: "#0068FF",
+                    color: "#fff",
+                    borderRadius: "12px",
+                    padding: "14px",
+                    fontSize: "15px",
+                    fontWeight: "700",
+                    textAlign: "center",
+                    textDecoration: "none",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  💬 Nhắn Zalo
+                </a>
+                <a
+                  href={`sms:${import.meta.env.VITE_COACH_PHONE || "0932955313"}?body=Chào Coach ${COACH_NAME}, em vừa làm khảo sát sức khỏe và muốn đặt lịch tư vấn ạ!`}
+                  style={{
+                    flex: 1,
+                    display: "block",
+                    background: "#6B7280",
+                    color: "#fff",
+                    borderRadius: "12px",
+                    padding: "14px",
+                    fontSize: "15px",
+                    fontWeight: "700",
+                    textAlign: "center",
+                    textDecoration: "none",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  📱 Nhắn SMS
+                </a>
+              </div>
               <button
                 onClick={() => { setStep(0); setForm({ ho_ten: "", so_dien_thoai: "", tuoi: "", gioi_tinh: "", nghe_nghiep: "", can_nang: "", chieu_cao: "", muc_tieu: "", muc_van_dong: "", van_de: [], ghi_chu: "" }); setAiResult(""); }}
                 style={{
