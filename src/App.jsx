@@ -106,7 +106,7 @@ async function callClaudeAPI(formData) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       model: "claude-sonnet-4-6",
-      max_tokens: 600,
+      max_tokens: 1200,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: buildUserPrompt(formData) }],
     }),
