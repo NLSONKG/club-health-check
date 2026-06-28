@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const COACH_NAME = import.meta.env.VITE_COACH_NAME || "Lam Sơn";
+const COACH_LOCATION = import.meta.env.VITE_COACH_LOCATION || "Rạch Giá";
 
 const GOALS = [
   { value: "Giảm cân", label: "Giảm cân" },
@@ -548,21 +549,11 @@ export default function App() {
       }}>
         <div>
           <div style={{ color: "#fff", fontWeight: "800", fontSize: "17px", letterSpacing: "-0.3px" }}>
-            Club Nutrition · {COACH_NAME}
+            Club Nutrition · {COACH_NAME} · {COACH_LOCATION}
           </div>
           <div style={{ color: "#A7F3D0", fontSize: "12px", fontWeight: "500", marginTop: "2px" }}>
             Hiểu cơ thể — Sống chủ động
           </div>
-        </div>
-        <div style={{
-          background: "rgba(255,255,255,0.15)",
-          borderRadius: "8px",
-          padding: "6px 12px",
-          color: "#fff",
-          fontSize: "12px",
-          fontWeight: "600",
-        }}>
-          {import.meta.env.VITE_COACH_LOCATION || "Rạch Giá, KG"}
         </div>
       </header>
 
@@ -1070,7 +1061,7 @@ export default function App() {
         lineHeight: "1.6",
       }}>
         <p style={{ fontWeight: "600", color: "#6B7280", marginBottom: "4px" }}>
-          Club Nutrition {COACH_NAME}
+          Club Nutrition · {COACH_NAME} · {COACH_LOCATION}
         </p>
         <p>Thông tin chỉ mang tính tham khảo, không phải chẩn đoán y khoa</p>
       </footer>
