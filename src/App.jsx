@@ -120,7 +120,7 @@ async function callClaudeAPI(formData) {
 // ✅ Lưu qua serverless function — token an toàn, không lộ ra browser
 async function saveToNocoDB(formData, aiResult) {
   const bmi = calcBMI(formData.can_nang, formData.chieu_cao);
-  await fetch("/api/save-response", {
+  const response = await fetch("/api/save-response", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -143,6 +143,10 @@ async function saveToNocoDB(formData, aiResult) {
       nguon: "chatbot_web",
     }),
   });
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error(`saveToNocoDB failed: ${response.status} ${errText}`);
+  }
 }
 
 async function sendTelegram(formData) {
