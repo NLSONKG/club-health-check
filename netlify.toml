@@ -14,3 +14,15 @@
   to = "/.netlify/functions/save-response"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/api/get-gsv"
+  to = "/.netlify/functions/get-gsv"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/get-leads"
+  to = "/.netlify/functions/get-leads"
+  status = 200
+  force = true

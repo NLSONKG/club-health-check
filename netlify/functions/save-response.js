@@ -27,6 +27,7 @@ export default async (req) => {
 
     // Cot that trong NocoDB dung "ket_qua-ai" (dau gach ngang), khong phai "ket_qua_ai"
     const payload = {
+      ma_link: body.ma_link,
       ten_gsv: body.ten_gsv,
       ho_ten: body.ho_ten,
       so_dien_thoai: body.so_dien_thoai,

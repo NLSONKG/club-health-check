@@ -2,9 +2,6 @@ import { useState, useEffect } from "react";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const COACH_NAME = import.meta.env.VITE_COACH_NAME || "Lam Sơn";
-const COACH_LOCATION = import.meta.env.VITE_COACH_LOCATION || "Rạch Giá";
-
 const GOALS = [
   { value: "Giảm cân", label: "Giảm cân" },
   { value: "Tăng cân / tăng cơ", label: "Tăng cân / tăng cơ" },
@@ -30,7 +27,8 @@ const ISSUES = [
   { value: "Đau mỏi vai gáy, lưng (do ngồi nhiều)", label: "Đau mỏi vai gáy, lưng" },
 ];
 
-const SYSTEM_PROMPT = `Bạn là trợ lý tư vấn sức khỏe sơ bộ cho Club Nutrition của Coach ${COACH_NAME}. Coach ${COACH_NAME} là Thành Viên Độc Lập Herbalife.
+function buildSystemPrompt(coachName) {
+  return `Bạn là trợ lý tư vấn sức khỏe sơ bộ cho Club Nutrition của Coach ${coachName}. Coach ${coachName} là Thành Viên Độc Lập Herbalife.
 
 NHIỆM VỤ: Đọc thông tin khách tự cung cấp → phân tích sơ bộ → gợi ý hướng cải thiện.
 
@@ -45,7 +43,7 @@ CẤU TRÚC TRẢ LỜI (đúng thứ tự, dùng emoji đầu mỗi mục):
 2. 📊 Nhận xét sơ bộ về tình trạng hiện tại (2–3 điểm cụ thể dựa trên thông tin khách cung cấp)
 3. ⚡ Điều cần chú ý nhất (1 điểm ưu tiên hàng đầu)
 4. 🎯 Hướng cải thiện gợi ý (2–3 bước cụ thể, thực tế)
-5. 📅 CTA mềm: Mời đặt lịch đo chỉ số miễn phí với Coach ${COACH_NAME} để có kế hoạch cá nhân hóa
+5. 📅 CTA mềm: Mời đặt lịch đo chỉ số miễn phí với Coach ${coachName} để có kế hoạch cá nhân hóa
 
 TUYỆT ĐỐI KHÔNG:
 - Chẩn đoán bệnh hoặc đề cập tên bệnh cụ thể
@@ -56,6 +54,7 @@ TUYỆT ĐỐI KHÔNG:
 
 DISCLAIMER bắt buộc cuối phản hồi (xuống dòng, in nghiêng):
 "*Phân tích này chỉ mang tính tham khảo dựa trên thông tin bạn tự cung cấp, không phải chẩn đoán y khoa. Kết quả thực tế tùy thuộc vào từng cá nhân.*"`;
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -101,14 +100,14 @@ function formatResponse(text) {
 
 // ─── API Calls ────────────────────────────────────────────────────────────────
 
-async function callClaudeAPI(formData) {
+async function callClaudeAPI(formData, coachName) {
   const response = await fetch("/api/analyze", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       model: "claude-sonnet-4-6",
       max_tokens: 1200,
-      system: SYSTEM_PROMPT,
+      system: buildSystemPrompt(coachName),
       messages: [{ role: "user", content: buildUserPrompt(formData) }],
     }),
   });
@@ -118,13 +117,14 @@ async function callClaudeAPI(formData) {
 }
 
 // ✅ Lưu qua serverless function — token an toàn, không lộ ra browser
-async function saveToNocoDB(formData, aiResult) {
+async function saveToNocoDB(formData, aiResult, coachName, maLink) {
   const bmi = calcBMI(formData.can_nang, formData.chieu_cao);
   const response = await fetch("/api/save-response", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      ten_gsv: COACH_NAME,
+      ma_link: maLink,
+      ten_gsv: coachName,
       ho_ten: formData.ho_ten,
       so_dien_thoai: formData.so_dien_thoai,
       tuoi: parseInt(formData.tuoi),
@@ -440,9 +440,124 @@ function Toast({ message, show }) {
   );
 }
 
+function Dashboard({ gsvParam }) {
+  const [sdt, setSdt] = useState("");
+  const [status, setStatus] = useState("idle"); // idle | loading | ok | error
+  const [errorMsg, setErrorMsg] = useState("");
+  const [leads, setLeads] = useState([]);
+  const [total, setTotal] = useState(0);
+
+  const handleCheck = async () => {
+    if (!sdt.trim()) return;
+    setStatus("loading");
+    setErrorMsg("");
+    try {
+      const res = await fetch(
+        `/api/get-leads?gsv=${encodeURIComponent(gsvParam)}&sdt=${encodeURIComponent(sdt.trim())}`
+      );
+      if (res.status === 403) {
+        setStatus("error");
+        setErrorMsg("Số điện thoại không đúng, vui lòng kiểm tra lại");
+        return;
+      }
+      if (!res.ok) {
+        setStatus("error");
+        setErrorMsg("Không tải được dữ liệu, vui lòng thử lại");
+        return;
+      }
+      const data = await res.json();
+      setLeads(data.leads || []);
+      setTotal(data.total || 0);
+      setStatus("ok");
+    } catch {
+      setStatus("error");
+      setErrorMsg("Không tải được dữ liệu, vui lòng thử lại");
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: "480px", margin: "0 auto", padding: "24px 20px" }}>
+      <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#1F2937", marginBottom: "16px" }}>
+        📋 Dashboard khảo sát
+      </h2>
+
+      {status !== "ok" && (
+        <>
+          <InputField label="Nhập số điện thoại để xác nhận" required error={status === "error" ? errorMsg : null}>
+            <TextInput
+              value={sdt}
+              onChange={setSdt}
+              placeholder="0912 345 678"
+              type="tel"
+              hasError={status === "error"}
+            />
+          </InputField>
+          <button
+            onClick={handleCheck}
+            disabled={status === "loading"}
+            style={{
+              width: "100%",
+              background: "#00833D",
+              color: "#fff",
+              border: "none",
+              borderRadius: "12px",
+              padding: "14px",
+              fontSize: "15px",
+              fontWeight: "700",
+              cursor: status === "loading" ? "default" : "pointer",
+              opacity: status === "loading" ? 0.7 : 1,
+              fontFamily: "inherit",
+            }}
+          >
+            {status === "loading" ? "Đang kiểm tra..." : "Xem danh sách"}
+          </button>
+        </>
+      )}
+
+      {status === "ok" && (
+        <>
+          <p style={{ fontSize: "14px", color: "#374151", marginBottom: "12px" }}>
+            Tổng số lead: <strong style={{ color: "#00833D" }}>{total}</strong>
+          </p>
+          <div style={{ overflowX: "auto", border: "1.5px solid #D1FAE5", borderRadius: "10px" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+              <thead>
+                <tr style={{ background: "#F0FAF5" }}>
+                  <th style={{ padding: "10px 12px", textAlign: "left", color: "#00833D" }}>Tên khách</th>
+                  <th style={{ padding: "10px 12px", textAlign: "left", color: "#00833D" }}>SĐT</th>
+                  <th style={{ padding: "10px 12px", textAlign: "left", color: "#00833D" }}>Tuổi</th>
+                  <th style={{ padding: "10px 12px", textAlign: "left", color: "#00833D" }}>Mục tiêu</th>
+                  <th style={{ padding: "10px 12px", textAlign: "left", color: "#00833D" }}>Ngày</th>
+                </tr>
+              </thead>
+              <tbody>
+                {leads.map((l, i) => (
+                  <tr key={i} style={{ borderTop: "1px solid #E5F4EC" }}>
+                    <td style={{ padding: "10px 12px", color: "#1F2937" }}>{l.ho_ten}</td>
+                    <td style={{ padding: "10px 12px", color: "#1F2937" }}>{l.so_dien_thoai}</td>
+                    <td style={{ padding: "10px 12px", color: "#1F2937" }}>{l.tuoi}</td>
+                    <td style={{ padding: "10px 12px", color: "#1F2937" }}>{l.muc_tieu}</td>
+                    <td style={{ padding: "10px 12px", color: "#6B7280" }}>
+                      {l.thoi_gian ? new Date(l.thoi_gian).toLocaleString("vi-VN") : ""}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── Main App ─────────────────────────────────────────────────────────────────
 
 export default function App() {
+  const params = new URLSearchParams(window.location.search);
+  const gsvParam = (params.get("gsv") || "").trim().toLowerCase();
+  const isDashboard = params.get("view") === "dashboard";
+
   const [step, setStep] = useState(0); // 0=hero, 1=formA, 2=formB, 3=loading, 4=result
   const [form, setForm] = useState({
     ho_ten: "", so_dien_thoai: "", tuoi: "", gioi_tinh: "", nghe_nghiep: "",
@@ -452,10 +567,42 @@ export default function App() {
   const [aiResult, setAiResult] = useState("");
   const [toast, setToast] = useState({ show: false, message: "" });
   const [loadingMsg, setLoadingMsg] = useState("Đang phân tích thông tin của bạn...");
+  const [coach, setCoach] = useState(null);
+  const [coachStatus, setCoachStatus] = useState(isDashboard ? "skip" : "loading");
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [step]);
+
+  useEffect(() => {
+    if (isDashboard) return;
+    if (!gsvParam) {
+      setCoachStatus("invalid");
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/get-gsv?gsv=${encodeURIComponent(gsvParam)}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("gsv not found");
+        return res.json();
+      })
+      .then((data) => {
+        if (cancelled) return;
+        setCoach(data);
+        setCoachStatus("ok");
+      })
+      .catch(() => {
+        if (!cancelled) setCoachStatus("invalid");
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const COACH_NAME = coach?.Ho_Ten || "";
+  const COACH_LOCATION = coach?.Dia_Diem || "";
+  const COACH_PHONE = coach?.SDT || "";
 
   const setField = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
 
@@ -515,12 +662,12 @@ export default function App() {
     }, 1800);
 
     try {
-      const result = await callClaudeAPI(form);
+      const result = await callClaudeAPI(form, COACH_NAME);
       clearInterval(interval);
       setAiResult(result);
       setStep(4);
       Promise.all([
-        saveToNocoDB(form, result).then(() => showToast("✅ Kết quả đã được lưu lại!")).catch(() => {}),
+        saveToNocoDB(form, result, COACH_NAME, gsvParam).then(() => showToast("✅ Kết quả đã được lưu lại!")).catch(() => {}),
         sendTelegram(form).catch(() => {}),
         sendZaloNotify(form).catch(() => {}),
       ]);
@@ -536,6 +683,39 @@ export default function App() {
 
   const bmi = calcBMI(form.can_nang, form.chieu_cao);
   const bmiInfo = bmi ? bmiLabel(bmi) : null;
+
+  if (isDashboard) {
+    return <Dashboard gsvParam={gsvParam} />;
+  }
+
+  if (coachStatus === "loading") {
+    return (
+      <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <LoadingDots />
+      </div>
+    );
+  }
+
+  if (coachStatus === "invalid") {
+    return (
+      <div
+        style={{
+          minHeight: "60vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "24px",
+          textAlign: "center",
+        }}
+      >
+        <div style={{ fontSize: "40px", marginBottom: "12px" }}>⚠️</div>
+        <p style={{ fontSize: "15px", color: "#1F2937", fontWeight: "600" }}>
+          Link chưa đúng, vui lòng liên hệ người gửi
+        </p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -975,7 +1155,7 @@ export default function App() {
 
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               <a
-                href={`tel:${import.meta.env.VITE_COACH_PHONE || "0932955313"}`}
+                href={`tel:${COACH_PHONE}`}
                 style={{
                   display: "block",
                   background: "#00833D",
@@ -995,7 +1175,7 @@ export default function App() {
               </a>
               <div style={{ display: "flex", gap: "10px" }}>
                 <a
-                  href={`https://zalo.me/${(import.meta.env.VITE_COACH_PHONE || "0932955313").replace(/^0/, "84")}`}
+                  href={`https://zalo.me/${COACH_PHONE.replace(/^0/, "84")}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
@@ -1015,7 +1195,7 @@ export default function App() {
                   💬 Nhắn Zalo
                 </a>
                 <a
-                  href={`sms:${import.meta.env.VITE_COACH_PHONE || "0932955313"}?body=Chào Coach ${COACH_NAME}, em vừa làm khảo sát sức khỏe và muốn đặt lịch tư vấn ạ!`}
+                  href={`sms:${COACH_PHONE}?body=Chào Coach ${COACH_NAME}, em vừa làm khảo sát sức khỏe và muốn đặt lịch tư vấn ạ!`}
                   style={{
                     flex: 1,
                     display: "block",
