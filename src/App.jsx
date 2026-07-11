@@ -119,6 +119,7 @@ async function callClaudeAPI(formData, coachName) {
 // ✅ Lưu qua serverless function — token an toàn, không lộ ra browser
 async function saveToNocoDB(formData, aiResult, coachName, maLink) {
   const bmi = calcBMI(formData.can_nang, formData.chieu_cao);
+  const now = new Date().toISOString();
   const response = await fetch("/api/save-response", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -139,9 +140,13 @@ async function saveToNocoDB(formData, aiResult, coachName, maLink) {
       ghi_chu: formData.ghi_chu || "",
       dong_y_tu_van: !!formData.dong_y_tu_van,
       dong_y_quang_cao: !!formData.dong_y_quang_cao,
+      dong_y_suc_khoe: !!formData.dong_y_suc_khoe,
+      dong_y_lien_he: !!formData.dong_y_lien_he,
+      dong_y_marketing: !!formData.dong_y_marketing,
+      ngay_dong_y: now,
       loai_dang_ky: isMinorAge(formData.tuoi) ? "Phụ huynh đăng ký hộ" : "Chính chủ",
       ket_qua_ai: aiResult,
-      thoi_gian: new Date().toISOString(),
+      thoi_gian: now,
       trang_thai: "chua_tu_van",
       nguon: "chatbot_web",
     }),
@@ -664,7 +669,7 @@ function Dashboard({ gsvParam }) {
 
 export default function App() {
   const params = new URLSearchParams(window.location.search);
-  const gsvParam = (params.get("gsv") || "").trim().toLowerCase();
+  const gsvParam = (params.get("gsv") || "").trim().toUpperCase();
   const isDashboard = params.get("view") === "dashboard";
 
   const [step, setStep] = useState(0); // 0=hero, 1=formA, 2=formB, 3=loading, 4=result
@@ -672,6 +677,7 @@ export default function App() {
     ho_ten: "", so_dien_thoai: "", tuoi: "", gioi_tinh: "", nghe_nghiep: "",
     can_nang: "", chieu_cao: "", muc_tieu: "", muc_van_dong: "", van_de: [], ghi_chu: "",
     dong_y_tu_van: false, dong_y_quang_cao: false,
+    dong_y_suc_khoe: false, dong_y_lien_he: false, dong_y_marketing: false,
   });
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
   const [errors, setErrors] = useState({});
@@ -749,6 +755,8 @@ export default function App() {
       e.chieu_cao = " ";
     }
     if (!form.dong_y_tu_van) e.dong_y_tu_van = "Vui lòng đồng ý để chúng tôi có thể tư vấn cho bạn";
+    if (!form.dong_y_suc_khoe) e.dong_y_suc_khoe = "Vui lòng đồng ý để chúng tôi có thể tư vấn cho bạn";
+    if (!form.dong_y_lien_he) e.dong_y_lien_he = "Vui lòng đồng ý để chúng tôi có thể liên hệ lại với bạn";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -1128,6 +1136,42 @@ export default function App() {
               />
             </div>
 
+            <p style={{ fontSize: "13px", fontWeight: "700", color: "#1F2937", margin: "16px 0 8px" }}>
+              Xác nhận bổ sung
+            </p>
+
+            <div style={{ marginBottom: "10px" }}>
+              <ConsentCheckbox
+                checked={form.dong_y_suc_khoe}
+                onChange={(v) => setField("dong_y_suc_khoe")(v)}
+                hasError={!!errors.dong_y_suc_khoe}
+                label="Tôi đồng ý cung cấp thông tin chỉ số sức khỏe của mình để được tư vấn"
+              />
+              {errors.dong_y_suc_khoe && (
+                <p style={{ fontSize: "12px", color: "#EF4444", marginTop: "4px" }}>{errors.dong_y_suc_khoe}</p>
+              )}
+            </div>
+
+            <div style={{ marginBottom: "10px" }}>
+              <ConsentCheckbox
+                checked={form.dong_y_lien_he}
+                onChange={(v) => setField("dong_y_lien_he")(v)}
+                hasError={!!errors.dong_y_lien_he}
+                label="Tôi đồng ý được liên hệ lại để nhận kết quả tư vấn chi tiết"
+              />
+              {errors.dong_y_lien_he && (
+                <p style={{ fontSize: "12px", color: "#EF4444", marginTop: "4px" }}>{errors.dong_y_lien_he}</p>
+              )}
+            </div>
+
+            <div style={{ marginBottom: "8px" }}>
+              <ConsentCheckbox
+                checked={form.dong_y_marketing}
+                onChange={(v) => setField("dong_y_marketing")(v)}
+                label="(Không bắt buộc) Tôi đồng ý nhận thêm thông tin về sản phẩm, chương trình hoặc sự kiện khác"
+              />
+            </div>
+
             <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
               <button
                 onClick={() => { setStep(1); setErrors({}); }}
@@ -1348,7 +1392,7 @@ export default function App() {
                 </a>
               </div>
               <button
-                onClick={() => { setStep(0); setForm({ ho_ten: "", so_dien_thoai: "", tuoi: "", gioi_tinh: "", nghe_nghiep: "", can_nang: "", chieu_cao: "", muc_tieu: "", muc_van_dong: "", van_de: [], ghi_chu: "", dong_y_tu_van: false, dong_y_quang_cao: false }); setAiResult(""); }}
+                onClick={() => { setStep(0); setForm({ ho_ten: "", so_dien_thoai: "", tuoi: "", gioi_tinh: "", nghe_nghiep: "", can_nang: "", chieu_cao: "", muc_tieu: "", muc_van_dong: "", van_de: [], ghi_chu: "", dong_y_tu_van: false, dong_y_quang_cao: false, dong_y_suc_khoe: false, dong_y_lien_he: false, dong_y_marketing: false }); setAiResult(""); }}
                 style={{
                   background: "#fff",
                   color: "#00833D",

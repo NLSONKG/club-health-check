@@ -26,16 +26,16 @@ export default async (req) => {
   }
 
   const url = new URL(req.url);
-  const maLink = (url.searchParams.get("gsv") || "").trim().toLowerCase();
-  if (!maLink) {
+  const maTV = (url.searchParams.get("gsv") || "").trim().toUpperCase();
+  if (!maTV) {
     return json(400, { error: "Thiếu mã gsv" });
   }
 
   try {
-    // Ma_Link la khoa duy nhat trong GSV_DanhBa (1 Ma_TV co the dung cho 2 nguoi)
-    const where = encodeURIComponent(`(Ma_Link,eq,${maLink})~and(Active,eq,true)`);
+    // Ma_TV la ma Herbalife that; 1 Ma_TV co the ung voi 2 dong (vo chong chung ma)
+    const where = encodeURIComponent(`(Ma_TV,eq,${maTV})~and(Active,eq,true)`);
     const res = await fetch(
-      `https://app.nocodb.com/api/v2/tables/${tableId}/records?where=${where}&limit=1`,
+      `https://app.nocodb.com/api/v2/tables/${tableId}/records?where=${where}&limit=25`,
       { headers: { "xc-token": apiToken } }
     );
     if (!res.ok) {
@@ -43,14 +43,18 @@ export default async (req) => {
       return json(500, { error: errText });
     }
     const data = await res.json();
-    const record = data?.list?.[0];
-    if (!record) {
+    const records = data?.list || [];
+    if (records.length === 0) {
       return json(404, { error: "Không tìm thấy GSV" });
     }
+    // App chi hien thi thong tin GSV cho khach xem (khong dang nhap) -> lay dong dau
+    // lam nguon SDT/Dia_Diem, ghep ten neu ma dung chung cho ca cap vo chong
+    const first = records[0];
+    const hoTen = records.map((r) => r.Ho_Ten).filter(Boolean).join(" & ");
     return json(200, {
-      Ho_Ten: record.Ho_Ten,
-      SDT: record.SDT,
-      Dia_Diem: record.Dia_Diem,
+      Ho_Ten: hoTen,
+      SDT: first.SDT,
+      Dia_Diem: first.Dia_Diem,
     });
   } catch (err) {
     return json(500, { error: err.message });

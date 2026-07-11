@@ -27,16 +27,16 @@ export default async (req) => {
   }
 
   const url = new URL(req.url);
-  const maLink = (url.searchParams.get("gsv") || "").trim().toLowerCase();
+  const maTV = (url.searchParams.get("gsv") || "").trim().toUpperCase();
   const sdt = (url.searchParams.get("sdt") || "").trim();
-  if (!maLink || !sdt) {
+  if (!maTV || !sdt) {
     return json(400, { error: "Thiếu gsv hoặc sdt" });
   }
 
   try {
-    const whereGsv = encodeURIComponent(`(Ma_Link,eq,${maLink})~and(Active,eq,true)`);
+    const whereGsv = encodeURIComponent(`(Ma_TV,eq,${maTV})~and(Active,eq,true)`);
     const gsvRes = await fetch(
-      `https://app.nocodb.com/api/v2/tables/${danhBaTableId}/records?where=${whereGsv}&limit=1`,
+      `https://app.nocodb.com/api/v2/tables/${danhBaTableId}/records?where=${whereGsv}&limit=25`,
       { headers: { "xc-token": apiToken } }
     );
     if (!gsvRes.ok) {
@@ -44,15 +44,17 @@ export default async (req) => {
       return json(500, { error: errText });
     }
     const gsvData = await gsvRes.json();
-    const gsvRecord = gsvData?.list?.[0];
-    if (!gsvRecord) {
+    const gsvRecords = gsvData?.list || [];
+    if (gsvRecords.length === 0) {
       return json(404, { error: "Không tìm thấy GSV" });
     }
-    if ((gsvRecord.SDT || "").trim() !== sdt) {
+    // Ma_TV co the dung chung cho 2 nguoi (vo chong) -> sdt khop voi 1 trong 2 la du
+    const matched = gsvRecords.some((r) => (r.SDT || "").trim() === sdt);
+    if (!matched) {
       return json(403, { error: "Số điện thoại không khớp" });
     }
 
-    const whereLeads = encodeURIComponent(`(ma_link,eq,${maLink})`);
+    const whereLeads = encodeURIComponent(`(ma_link,eq,${maTV})`);
     const leadsRes = await fetch(
       `https://app.nocodb.com/api/v2/tables/${khaoSatTableId}/records?where=${whereLeads}&sort=-thoi_gian`,
       { headers: { "xc-token": apiToken } }

@@ -28,3 +28,6 @@ dist-ssr
 *.sln
 *.sw?
 vite.config.js
+
+# Local Netlify folder
+.netlify
