@@ -137,6 +137,9 @@ async function saveToNocoDB(formData, aiResult, coachName, maLink) {
       muc_van_dong: formData.muc_van_dong,
       van_de: formData.van_de.join(", "),
       ghi_chu: formData.ghi_chu || "",
+      dong_y_tu_van: !!formData.dong_y_tu_van,
+      dong_y_quang_cao: !!formData.dong_y_quang_cao,
+      loai_dang_ky: isMinorAge(formData.tuoi) ? "Phụ huynh đăng ký hộ" : "Chính chủ",
       ket_qua_ai: aiResult,
       thoi_gian: new Date().toISOString(),
       trang_thai: "chua_tu_van",
@@ -396,6 +399,112 @@ function CheckboxGroup({ options, value, onChange }) {
   );
 }
 
+// ─── Đồng ý & Chính sách bảo mật (Luật 91/2025/QH15) ──────────────────────────
+
+const PRIVACY_CONTACT_PHONE = "0907402313";
+
+// Tuoi 10-17 (theo dung khoang validateA da chap nhan) -> nguoi dang nhap form la phu huynh/nguoi giam ho dang ky ho
+function isMinorAge(tuoi) {
+  const t = parseInt(tuoi, 10);
+  return !isNaN(t) && t >= 10 && t <= 17;
+}
+
+const CONSENT_LABEL_ADULT =
+  "Tôi đồng ý cung cấp các thông tin trên để được tư vấn dinh dưỡng / sức khỏe. Thông tin này được bảo mật và chỉ dùng cho mục đích tư vấn.";
+const CONSENT_LABEL_MINOR =
+  "Tôi là phụ huynh/người giám hộ hợp pháp của trẻ này. Tôi đồng ý cung cấp các thông tin trên để con em tôi được tư vấn dinh dưỡng/sức khỏe. Thông tin này được bảo mật và chỉ dùng cho mục đích tư vấn.";
+
+function ConsentCheckbox({ checked, onChange, label, hasError }) {
+  return (
+    <label
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        gap: "10px",
+        padding: "10px 12px",
+        border: `1.5px solid ${hasError ? "#EF4444" : checked ? "#00833D" : "#D1FAE5"}`,
+        borderRadius: "8px",
+        cursor: "pointer",
+        background: checked ? "#F0FAF5" : "#fff",
+        fontSize: "13px",
+        color: "#374151",
+        lineHeight: "1.5",
+        userSelect: "none",
+      }}
+    >
+      <div
+        style={{
+          width: "18px",
+          height: "18px",
+          minWidth: "18px",
+          border: `2px solid ${hasError ? "#EF4444" : checked ? "#00833D" : "#D1D5DB"}`,
+          borderRadius: "4px",
+          background: checked ? "#00833D" : "#fff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          marginTop: "1px",
+        }}
+      >
+        {checked && (
+          <svg width="11" height="11" viewBox="0 0 10 10" fill="none">
+            <path d="M2 5l2.5 2.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
+      </div>
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} style={{ display: "none" }} />
+      <span>{label}</span>
+    </label>
+  );
+}
+
+function PrivacyPolicyBox({ open, onToggle }) {
+  return (
+    <div style={{ marginBottom: "12px" }}>
+      <button
+        type="button"
+        onClick={onToggle}
+        style={{
+          background: "none",
+          border: "none",
+          padding: 0,
+          color: "#00833D",
+          fontSize: "13px",
+          fontWeight: "600",
+          textDecoration: "underline",
+          cursor: "pointer",
+          fontFamily: "inherit",
+        }}
+      >
+        {open ? "Ẩn Chính sách bảo mật ▲" : "Xem Chính sách bảo mật ▼"}
+      </button>
+      {open && (
+        <div
+          style={{
+            marginTop: "10px",
+            background: "#F0FAF5",
+            border: "1.5px solid #D1FAE5",
+            borderRadius: "10px",
+            padding: "14px 16px",
+            fontSize: "12.5px",
+            color: "#374151",
+            lineHeight: "1.7",
+          }}
+        >
+          <p style={{ fontWeight: "700", color: "#1F2937", marginBottom: "6px" }}>
+            Chính sách bảo mật thông tin
+          </p>
+          <p>• Chúng tôi thu thập: họ tên, số điện thoại, và các chỉ số sức khỏe bạn cung cấp.</p>
+          <p>• Mục đích: để tư vấn dinh dưỡng/sức khỏe phù hợp với bạn, không dùng cho mục đích nào khác nếu bạn không đồng ý.</p>
+          <p>• Lưu trữ: dữ liệu được lưu trong hệ thống nội bộ, chỉ người tư vấn trực tiếp được xem.</p>
+          <p>• Quyền của bạn: bạn có thể yêu cầu xem, sửa hoặc xóa thông tin của mình bất kỳ lúc nào.</p>
+          <p style={{ marginBottom: 0 }}>• Liên hệ: nhắn Zalo {PRIVACY_CONTACT_PHONE} để thực hiện các quyền trên.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function LoadingDots() {
   return (
     <div style={{ display: "flex", gap: "6px", justifyContent: "center", alignItems: "center", padding: "8px 0" }}>
@@ -562,7 +671,9 @@ export default function App() {
   const [form, setForm] = useState({
     ho_ten: "", so_dien_thoai: "", tuoi: "", gioi_tinh: "", nghe_nghiep: "",
     can_nang: "", chieu_cao: "", muc_tieu: "", muc_van_dong: "", van_de: [], ghi_chu: "",
+    dong_y_tu_van: false, dong_y_quang_cao: false,
   });
+  const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
   const [errors, setErrors] = useState({});
   const [aiResult, setAiResult] = useState("");
   const [toast, setToast] = useState({ show: false, message: "" });
@@ -637,6 +748,7 @@ export default function App() {
       e.can_nang = "Vui lòng kiểm tra lại cân nặng / chiều cao";
       e.chieu_cao = " ";
     }
+    if (!form.dong_y_tu_van) e.dong_y_tu_van = "Vui lòng đồng ý để chúng tôi có thể tư vấn cho bạn";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -994,6 +1106,28 @@ export default function App() {
               />
             </InputField>
 
+            <PrivacyPolicyBox open={showPrivacyPolicy} onToggle={() => setShowPrivacyPolicy((v) => !v)} />
+
+            <div style={{ marginBottom: "10px" }}>
+              <ConsentCheckbox
+                checked={form.dong_y_tu_van}
+                onChange={(v) => setField("dong_y_tu_van")(v)}
+                hasError={!!errors.dong_y_tu_van}
+                label={isMinorAge(form.tuoi) ? CONSENT_LABEL_MINOR : CONSENT_LABEL_ADULT}
+              />
+              {errors.dong_y_tu_van && (
+                <p style={{ fontSize: "12px", color: "#EF4444", marginTop: "4px" }}>{errors.dong_y_tu_van}</p>
+              )}
+            </div>
+
+            <div style={{ marginBottom: "8px" }}>
+              <ConsentCheckbox
+                checked={form.dong_y_quang_cao}
+                onChange={(v) => setField("dong_y_quang_cao")(v)}
+                label="(Không bắt buộc) Tôi đồng ý được liên hệ để giới thiệu thêm sản phẩm, chương trình hoặc sự kiện khác. Không chọn mục này vẫn được tư vấn bình thường."
+              />
+            </div>
+
             <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
               <button
                 onClick={() => { setStep(1); setErrors({}); }}
@@ -1214,7 +1348,7 @@ export default function App() {
                 </a>
               </div>
               <button
-                onClick={() => { setStep(0); setForm({ ho_ten: "", so_dien_thoai: "", tuoi: "", gioi_tinh: "", nghe_nghiep: "", can_nang: "", chieu_cao: "", muc_tieu: "", muc_van_dong: "", van_de: [], ghi_chu: "" }); setAiResult(""); }}
+                onClick={() => { setStep(0); setForm({ ho_ten: "", so_dien_thoai: "", tuoi: "", gioi_tinh: "", nghe_nghiep: "", can_nang: "", chieu_cao: "", muc_tieu: "", muc_van_dong: "", van_de: [], ghi_chu: "", dong_y_tu_van: false, dong_y_quang_cao: false }); setAiResult(""); }}
                 style={{
                   background: "#fff",
                   color: "#00833D",
