@@ -37,7 +37,7 @@ export default async (req) => {
     const whereGsv = encodeURIComponent(`(Ma_TV,eq,${maTV})~and(Active,eq,true)`);
     const gsvRes = await fetch(
       `https://app.nocodb.com/api/v2/tables/${danhBaTableId}/records?where=${whereGsv}&limit=25`,
-      { headers: { "xc-token": apiToken } }
+      { headers: { "xc-token": apiToken, "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36" } }
     );
     if (!gsvRes.ok) {
       const errText = await gsvRes.text();
@@ -57,7 +57,7 @@ export default async (req) => {
     const whereLeads = encodeURIComponent(`(ma_link,eq,${maTV})`);
     const leadsRes = await fetch(
       `https://app.nocodb.com/api/v2/tables/${khaoSatTableId}/records?where=${whereLeads}&sort=-thoi_gian`,
-      { headers: { "xc-token": apiToken } }
+      { headers: { "xc-token": apiToken, "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36" } }
     );
     if (!leadsRes.ok) {
       const errText = await leadsRes.text();

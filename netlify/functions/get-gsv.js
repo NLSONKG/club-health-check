@@ -36,7 +36,7 @@ export default async (req) => {
     const where = encodeURIComponent(`(Ma_TV,eq,${maTV})~and(Active,eq,true)`);
     const res = await fetch(
       `https://app.nocodb.com/api/v2/tables/${tableId}/records?where=${where}&limit=25`,
-      { headers: { "xc-token": apiToken } }
+      { headers: { "xc-token": apiToken, "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36" } }
     );
     if (!res.ok) {
       const errText = await res.text();
